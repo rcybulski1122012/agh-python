@@ -1,13 +1,13 @@
 from string import ascii_lowercase
-from typing import Literal, Union, Generator
+from typing import Generator
+from typing import Union
 
-Operators = Literal["&", "|", ">"]
-Bin = Literal["0", "1"]
 OPERATORS = "&|>"
 
 
-def check(expr: str) -> bool:
+def check(expr: str) -> int:
     brackets_counter = 0
+    # "test"
 
     # status is equal to False if we expect a variable or "("
     # status is equal to True if we expect an operator of ")"
@@ -43,7 +43,7 @@ def bracket(expr: str) -> str:
     return expr
 
 
-def bal(expr: str, operators: list[Operators]) -> Union[int, None]:
+def bal(expr: str, operators: list[str]) -> Union[int, None]:
     """Goes through the expression from right to left checking
     whether the current char is one of the given operators and is not inside any bracket, returning an index.
     If not found, it returns None
@@ -80,10 +80,12 @@ def rnp(expr: str) -> str:
             continue
 
         left = rnp(expr[:index])
-        right = rnp(expr[index+1:])
+        right = rnp(expr[index + 1 :])
         operator = expr[index]
 
         return f"{left}{right}{operator}"
+
+    return ""
 
 
 def map_values(expr: str, values: str) -> str:
@@ -111,12 +113,12 @@ def gen(n: int) -> Generator[str, None, None]:
         yield bin(i)[2:].rjust(n, "0")
 
 
-def val(expr: str) -> Bin:
+def val(expr: str) -> str:
     """Evaluates the value of the RPN expression
 
     Assumes that the expression in valid.
     """
-    stack = []
+    stack: list[str] = []
 
     for char in expr:
         if char in OPERATORS:
@@ -136,8 +138,8 @@ def val(expr: str) -> Bin:
     return stack[0]
 
 
-def _bool_to_bin(value: bool) -> Bin:
-    return "1" if value else "0"  # type: ignore
+def _bool_to_bin(value: bool) -> str:
+    return "1" if value else "0"
 
 
 def tautology(expr: str) -> bool:
