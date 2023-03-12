@@ -2,14 +2,13 @@ from string import ascii_lowercase
 from typing import Generator
 from typing import Union
 
-OPERATORS = "&|>"
+OPERATORS = "&|>^"
 
 
 def check(expr: str) -> int:
     brackets_counter = 0
-    # "test"
 
-    # status is equal to False if we expect a variable or "("
+    # status is equal to False if we expect a variable, T, F, "~" or "("
     # status is equal to True if we expect an operator of ")"
     status = False
 
@@ -26,7 +25,7 @@ def check(expr: str) -> int:
                 return False
             elif char == "(":
                 brackets_counter += 1
-            elif char in ascii_lowercase:
+            elif char in ascii_lowercase + "TF":
                 status = True
 
         if brackets_counter < 0:
@@ -73,7 +72,7 @@ def rnp(expr: str) -> str:
     if len(expr) == 1:
         return expr
 
-    for operators in (list(">"), list("&|")):
+    for operators in (list(">"), list("&|"), list("^")):
         index = bal(expr, operators)
 
         if index is None:
@@ -84,6 +83,9 @@ def rnp(expr: str) -> str:
         operator = expr[index]
 
         return f"{left}{right}{operator}"
+
+    if expr[0] == "~":
+        return rnp(expr[1:]) + "~"
 
     return ""
 
@@ -97,12 +99,16 @@ def map_values(expr: str, values: str) -> str:
     """
     expr_list = list(expr)
 
-    unique_vars = sorted(list({char for char in expr if char.isalpha()}))
+    unique_vars = sorted(list({char for char in expr if char.isalpha() and char not in "TF"}))
 
     values_by_chars = dict(zip(unique_vars, values))
 
     for i, char in enumerate(expr_list):
-        if char.isalpha():
+        if char == "T":
+            expr_list[i] = "1"
+        elif char == "F":
+            expr_list[i] = "0"
+        elif char.isalpha():
             expr_list[i] = values_by_chars[char]
 
     return "".join(expr_list)
@@ -128,10 +134,15 @@ def val(expr: str) -> str:
                 evaluated = _bool_to_bin(right == left == "1")
             elif char == "|":
                 evaluated = _bool_to_bin(right == "1" or left == "1")
-            else:
+            elif char == ">":
                 evaluated = _bool_to_bin(left == "0" or right == "1")
+            else:  # char == "^"
+                evaluated = _bool_to_bin(len({left, right}) == 2)
 
             stack.append(evaluated)
+        elif char == "~":
+            last = stack.pop()
+            stack.append(_bool_to_bin(last == "0"))
         else:
             stack.append(char)
 
@@ -143,7 +154,7 @@ def _bool_to_bin(value: bool) -> str:
 
 
 def tautology(expr: str) -> bool:
-    n = len({char for char in expr if char.isalpha()})
+    n = len({char for char in expr if char.isalpha() and char not in "TF"})
 
     for values in gen(n):
         mapped = map_values(expr, values)
